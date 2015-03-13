@@ -1,0 +1,101 @@
+[manpage_begin tabs::jobs n 1.2]
+[copyright {2010-2011 Wojciech Kocjan <wojciech@kocjan.org>}]
+[moddesc   {tabs::jobs}]
+[titledesc {tabs::jobs}]
+[require Tcl 8.4]
+[require snit]
+
+[description]
+
+Tabs bases on jobs that can be run either standalone or as part of [const Tabsfile]. Each job is created as a snit object and has its own [const jobmanager]. A job is run using [cmd tabs::runjob] command, which creates a manager as well as actual job to perform.
+
+[para]
+Manager stores common options such as [option -label] and performs checks 
+
+[para]
+This mechanism should only be used by advanced users and is only documented for reference.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ::tabs::runjob] [arg type] [opt [arg options]]]
+Creates a job manager, job object and runs specified job. All [arg options] are passed to object as configuration options. Specified job [arg type] needs to accept all of specified options.
+
+[call [cmd ::tabs::jobs::<type>] [opt [arg options]]]
+Creates a new job object. This is used internally by [cmd tabs::runjob] command and is documented mainly for developers creating new job types. All methods specified in this documentation have to be implemented by all jobs.
+
+[call [arg job] [method execute]]
+Performs specified job.
+
+[call [arg job] [method inputs]]
+If implemented, this method should return a list of all input files and directories. This is used to determine whether a job should be re-run.
+
+[para]
+See [sectref {Checking whether job should be run}] for more details on determining is a job should be run.
+
+[call [arg job] [method outputs]]
+If implemented, this method should return a list of all output files and directories. This is used to determine whether a job should be re-run.
+
+[para]
+See [sectref {Checking whether job should be run}] for more details on determining is a job should be run.
+
+[call [arg job] [method uptodate]]
+If implemented, this method should return whether result of the job is up to date or if it should be re-run. 
+
+[para]
+See [sectref {Checking whether job should be run}] for more details on determining is a job should be run.
+
+[call [arg job] [method label]]
+If implemented, should return the default label for a task if one was not specified using [option -label] option. For example it is implemented as follows for [const tabs::jobs::wrap] type:
+[example {
+method label {} {
+    return "wrap [$self cget -output]"
+}
+}]
+
+[list_end]
+
+[section {Options provided by job manager}]
+The following options are handled by job manager and are accepted by all job types.
+
+[para]
+When writing a custom job, you should access these options in the following way:
+
+[example {
+if {[[$self cget -manager] cget -debug]} {
+    # perform additional debug actions
+}
+}]
+
+[list_begin itemized]
+
+[item] [option -always] -
+if set to [const true], job will be used regardless if it is up to date or not
+defaults to [const false];
+see [sectref {Checking whether job should be run}] for more details on determining is a job should be run
+
+[item] [option -debug] -
+if specified, additional information can be printed by a specified job
+defaults to [const false]
+
+
+[item] [option -skiptags] -
+when built using [const Tabsfile], specifies list of tags in which cases a task should be skipped;
+defaults to empty list
+
+[item] [option -internal] -
+specifies that a job is used as a delegate of another job - for example a [const tabs::jobs::wrap] job creates an internal [const tabs::jobs::copy] job to perform copying
+
+[item] [option -label] -
+label to use for output when building using Tabsfile; defaults to empty string, in which case task label is generated using job type's [method label] method
+
+[list_end]
+
+[section {Checking whether job should be run}]
+TODO - input/output
+TODO - uptodate
+
+[see_also tabs]
+[keywords tabs]
+[manpage_end]

@@ -1,0 +1,71 @@
+tcltest::test tabsWrapcookfs-1.1 "Create empty archive - cookfs" \
+    -constraints {vfs::cookfs} \
+    -setup {
+    set dir [tcltest::makeDirectory dir]
+    set file [writeBinary [tcltest::makeFile "" vfs] ""]
+    writeBinary [file join $dir file1] "Sample file"
+    writeBinary [file join $dir file2] [string repeat "Sample file " 1024]
+    file mkdir $dir/dir3
+    writeBinary [file join $dir dir3/file4] [string repeat "Sample file " 1024]
+} -body {
+    testRunjob wrap -output $file -copy [list $dir/*] -driver cookfs
+    vfs::cookfs::Mount $file $file
+    set rc [lsort [glob -directory $file -tails * */* */*/*]]
+    vfs::unmount $file
+    join $rc ,
+} -cleanup {
+    tcltest::removeDirectory dir
+    tcltest::removeFile vfs
+} -returnCodes ok -result dir3,dir3/file4,file1,file2
+
+tcltest::test tabsWrapcookfs-1.2 "Append to archive - cookfs" \
+    -constraints {vfs::cookfs} \
+    -setup {
+    set dir [tcltest::makeDirectory dir]
+    set file [writeBinary [tcltest::makeFile "" vfs] ""]
+    writeBinary [file join $dir file1] "Sample file"
+    writeBinary [file join $dir file2] [string repeat "Sample file " 1024]
+    file mkdir $dir/dir3
+    writeBinary [file join $dir dir3/file4] [string repeat "Sample file " 1024]
+} -body {
+    testRunjob wrap -output $file -copy [list $dir/*] -driver cookfs
+
+    writeBinary [file join $dir dir3/file5] [string repeat "Sample file " 1024]
+
+    testRunjob wrap -binary $file -output $file -copy [list [list $dir/dir3/file5 dir3/file5]] -driver cookfs
+    vfs::cookfs::Mount $file $file
+    set rc [lsort [glob -directory $file -tails * */* */*/*]]
+    vfs::unmount $file
+    join $rc ,
+} -cleanup {
+    tcltest::removeDirectory dir
+    tcltest::removeFile vfs
+} -returnCodes ok -result dir3,dir3/file4,dir3/file5,file1,file2
+
+tcltest::test tabsWrapcookfs-1.3 "Test storing dir and other directory also containing same directory" \
+    -constraints {vfs::cookfs} \
+    -setup {
+    set file [writeBinary [tcltest::makeFile "" vfs] ""]
+    set dir1 [tcltest::makeDirectory dir1]
+    set dir2 [tcltest::makeDirectory dir2]
+    file mkdir [file join $dir1 lib]
+    file mkdir [file join $dir1 lib lib1]
+    file mkdir [file join $dir1 lib lib2]
+    file mkdir [file join $dir2 lib2]
+    file mkdir [file join $dir2 lib3]
+    writeBinary [file join $dir1 lib lib1 file1.tcl] "Test file0"
+    writeBinary [file join $dir1 lib lib2 file1.tcl] "Test file1"
+    writeBinary [file join $dir2 lib2 file2.tcl] "Test file2"
+    writeBinary [file join $dir2 lib3 file2.tcl] "Test file3"
+} -body {
+    testRunjob wrap -binary $file -output $file -copy [list [list $dir2/* lib] $dir1/*] -driver cookfs
+    vfs::cookfs::Mount $file $file
+    set rc [lsort [glob -directory $file -tails * */* */*/*]]
+    vfs::unmount $file
+    join $rc ,
+} -cleanup {
+    tcltest::removeDirectory dir1
+    tcltest::removeDirectory dir2
+    tcltest::removeFile vfs
+} -returnCodes ok -result lib,lib/file2.tcl,lib/lib1,lib/lib1/file1.tcl,lib/lib2,lib/lib2/file1.tcl
+
