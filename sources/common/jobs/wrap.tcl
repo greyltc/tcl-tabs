@@ -63,7 +63,7 @@ snit::type tabs::job::wrap {
             fconfigure $fh -translation binary
             puts $fh {#!/bin/sh}
             puts $fh "# \\"
-            puts $fh {exec tclkit "$0" ${1+"$@"}}
+            puts $fh {exec tclsh "$0" ${1+"$@"}}
             puts $fh "package require starkit"
             if {$drv == "mk4"} {
                 puts $fh "starkit::header $drv -readonly"
