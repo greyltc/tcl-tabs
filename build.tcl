@@ -17,10 +17,10 @@ catch {
 }
 
 foreach {driver options binary dir output} {
-#    mk4 "" "" cli tabs-cli.tcl
+    mk4 "" "" cli tabs-cli.tcl
     zip "" "" cli tabs-cli-zip.tcl
     cookfs "" "" cli tabs-cli-cfs.tcl
-#    cookfs "-compression bz2" "" cli tabs-cli-cfs-bz2.tcl
+    cookfs "-compression bz2" "" cli tabs-cli-cfs-bz2.tcl
 } {
     if {$binary == ""} {
         set starkit true
